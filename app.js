@@ -22,49 +22,48 @@ updateClock();
 setInterval(updateClock, 1000);
 
 // ==========================================
-// 2. REAL-TIME VISITOR COUNT (WEBSOCKET)
+// 2. REAL-TIME ACTIVE VISITOR COUNT (HTTP HEARTBEAT)
 // ==========================================
 function initVisitorCount() {
   const textEl = document.getElementById('visitor-count-text');
   if (!textEl) return;
 
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const wsUrl = `${protocol}//${window.location.host}`;
+  // Session-persistent unique visitor ID (distinct per browser tab, persistent on refresh)
+  let visitorId = sessionStorage.getItem('peepal_visitor_id');
+  if (!visitorId) {
+    visitorId = 'v_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+    sessionStorage.setItem('peepal_visitor_id', visitorId);
+  }
 
-  let ws;
-  let reconnectTimeout;
-
-  function connect() {
+  async function sendHeartbeat(action = 'heartbeat') {
     try {
-      ws = new WebSocket(wsUrl);
-
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.type === 'count' && typeof data.count === 'number') {
-            const count = data.count;
-            textEl.textContent = `${count} ${count === 1 ? 'person is' : 'people are'} here rn.`;
-          }
-        } catch (e) {
-          console.error('Error parsing WebSocket message:', e);
+      const resp = await fetch('/api/visitor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ visitorId, action })
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        if (typeof data.count === 'number') {
+          const count = data.count;
+          textEl.textContent = `${count} ${count === 1 ? 'person is' : 'people are'} here rn.`;
         }
-      };
-
-      ws.onclose = () => {
-        clearTimeout(reconnectTimeout);
-        reconnectTimeout = setTimeout(connect, 3000);
-      };
-
-      ws.onerror = (err) => {
-        console.warn('WebSocket connection error:', err);
-        ws.close();
-      };
+      }
     } catch (e) {
-      console.error('WebSocket initialization error:', e);
+      console.warn('Visitor count heartbeat error:', e);
     }
   }
 
-  connect();
+  // Initial heartbeat & periodic poll every 4 seconds
+  sendHeartbeat('heartbeat');
+  setInterval(() => sendHeartbeat('heartbeat'), 4000);
+
+  // Send beacon on tab unload/close to decrement immediately
+  window.addEventListener('beforeunload', () => {
+    try {
+      navigator.sendBeacon('/api/visitor', JSON.stringify({ visitorId, action: 'leave' }));
+    } catch (e) {}
+  });
 }
 
 initVisitorCount();
@@ -132,11 +131,9 @@ function formatTime(sec) {
   return `${m}:${s}`;
 }
 
-// Update UI metadata & track state
-function loadTrack(index, autoPlay = true) {
+// Immediate metadata DOM hydration
+function loadTrackMetadata(index) {
   if (!songs || songs.length === 0) return;
-
-  stopNoteAnimation();
 
   currentIndex = (index + songs.length) % songs.length;
   const song = songs[currentIndex];
@@ -153,8 +150,8 @@ function loadTrack(index, autoPlay = true) {
   if (trackArtistEl) trackArtistEl.textContent = `${song.artist} • ${song.album} (${song.year})`;
   
   if (trackPublisherEl) {
-    trackPublisherEl.textContent = `Source: ${song.publisher} ↗`;
-    trackPublisherEl.href = song.channelUrl || song.youtubeUrl;
+    trackPublisherEl.textContent = `Source: ${song.publisher || 'Official'} ↗`;
+    trackPublisherEl.href = song.channelUrl || song.youtubeUrl || `https://www.youtube.com/watch?v=${song.youtubeVideoId}`;
   }
 
   if (coverImg && song.artwork) {
@@ -168,9 +165,19 @@ function loadTrack(index, autoPlay = true) {
 
   // Highlight active song in library list if open
   updateLibraryActiveHighlight();
+}
 
-  // Load into YouTube Player
-  if (playerReady && player) {
+// Load track and trigger playback if ready
+function loadTrack(index, autoPlay = true) {
+  if (!songs || songs.length === 0) return;
+
+  stopNoteAnimation();
+  loadTrackMetadata(index);
+
+  const song = songs[currentIndex];
+
+  // Load into YouTube Player if ready
+  if (playerReady && player && typeof player.loadVideoById === 'function') {
     if (autoPlay) {
       player.loadVideoById(song.youtubeVideoId);
       isPlaying = true;
@@ -180,6 +187,9 @@ function loadTrack(index, autoPlay = true) {
     }
   }
 }
+
+// Hydrate UI metadata immediately on script execution
+loadTrackMetadata(0);
 
 // ==========================================
 // 5. TRACK LIBRARY UI & SEARCH ARCHITECTURE
@@ -293,7 +303,11 @@ function updateLibraryActiveHighlight() {
   }
 }
 
+let libraryControlsBound = false;
 function initLibraryControls() {
+  if (libraryControlsBound) return;
+  libraryControlsBound = true;
+
   const btnLibrary = document.getElementById('btn-library');
   const btnClose = document.getElementById('btn-close-library');
   const backdrop = document.getElementById('library-backdrop');
@@ -351,7 +365,7 @@ function updatePlayPauseIcons(playing) {
 }
 
 function togglePlay() {
-  if (!playerReady || !player) return;
+  if (!playerReady || !player || typeof player.playVideo !== 'function') return;
 
   if (isPlaying) {
     player.pauseVideo();
@@ -401,26 +415,29 @@ function stopProgressPolling() {
   }
 }
 
-// Global YouTube API Event Handlers
-window.onYouTubeIframeAPIReady = function() {
+// Global YouTube API Initialization & Event Handlers
+function initYouTubePlayer() {
+  if (player) return;
+  if (!window.YT || !window.YT.Player) return;
+
+  const firstSongId = songs[0]?.youtubeVideoId || '6dGdvJG5Iww';
+
   player = new window.YT.Player('youtube-player', {
     height: '100%',
     width: '100%',
-    videoId: songs[0]?.youtubeVideoId || 'QKfGl39ZJWI',
+    videoId: firstSongId,
     playerVars: {
       autoplay: 0,
       controls: 1,
       rel: 0,
       modestbranding: 1,
       enablejsapi: 1,
-      origin: window.location.origin
+      origin: window.location.protocol.startsWith('http') ? window.location.origin : undefined
     },
     events: {
       onReady: (event) => {
         playerReady = true;
-        loadTrack(0, false);
-        bindControls();
-        initLibraryControls();
+        loadTrack(currentIndex, false);
       },
       onStateChange: (event) => {
         // YT.PlayerState: ENDED (0), PLAYING (1), PAUSED (2), BUFFERING (3), CUED (5)
@@ -439,7 +456,6 @@ window.onYouTubeIframeAPIReady = function() {
           updatePlayPauseIcons(false);
           stopProgressPolling();
           stopNoteAnimation();
-          // Auto-advance to next track
           nextTrack();
         }
       },
@@ -448,15 +464,40 @@ window.onYouTubeIframeAPIReady = function() {
         stopNoteAnimation();
         const trackPublisherEl = document.getElementById('track-publisher');
         if (trackPublisherEl) {
-          trackPublisherEl.textContent = 'Embed restricted - skipping ↗';
+          trackPublisherEl.textContent = 'Embed restricted - auto skipping ↗';
         }
-        setTimeout(() => nextTrack(), 1500);
+        setTimeout(() => nextTrack(), 1800);
       }
     }
   });
+}
+
+window.onYouTubeIframeAPIReady = function() {
+  initYouTubePlayer();
 };
 
+// Immediate check in case YouTube API script loaded before app.js executed
+if (window.YT && window.YT.Player) {
+  initYouTubePlayer();
+} else {
+  // Polling fallback to catch delayed API readiness
+  let attempts = 0;
+  const ytCheckInterval = setInterval(() => {
+    attempts++;
+    if (window.YT && window.YT.Player) {
+      clearInterval(ytCheckInterval);
+      initYouTubePlayer();
+    } else if (attempts > 50) {
+      clearInterval(ytCheckInterval);
+    }
+  }, 100);
+}
+
+let controlsBound = false;
 function bindControls() {
+  if (controlsBound) return;
+  controlsBound = true;
+
   const btnPlay = document.getElementById('btn-play');
   const btnPrev = document.getElementById('btn-prev');
   const btnNext = document.getElementById('btn-next');
@@ -480,4 +521,9 @@ function bindControls() {
     }
   });
 }
+
+// Bind UI controls on startup
+bindControls();
+initLibraryControls();
+
 

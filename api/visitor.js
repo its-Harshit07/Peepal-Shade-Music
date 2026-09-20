@@ -1,18 +1,18 @@
-import express from 'express';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const app = express();
-app.use(express.json());
-app.use(express.text());
-
-// Active visitor session tracking for local server
+// api/visitor.js - Vercel Serverless Function for Real-Time Active Visitor Count
 const activeVisitorsMap = new Map();
 
-app.all('/api/visitor', (req, res) => {
+export default function handler(req, res) {
+  // CORS Headers for production
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST');
+  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
   let body = {};
   if (req.body) {
     try {
@@ -35,7 +35,7 @@ app.all('/api/visitor', (req, res) => {
     }
   }
 
-  // Purge inactive sessions (> 10s)
+  // Purge stale sessions (> 10 seconds since last heartbeat)
   for (const [vid, lastSeen] of activeVisitorsMap.entries()) {
     if (now - lastSeen > 10000) {
       activeVisitorsMap.delete(vid);
@@ -43,13 +43,6 @@ app.all('/api/visitor', (req, res) => {
   }
 
   const count = Math.max(1, activeVisitorsMap.size);
-  res.json({ count });
-});
 
-// Serve static files from root directory
-app.use(express.static(__dirname));
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
-});
+  res.status(200).json({ count });
+}

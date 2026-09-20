@@ -8,6 +8,7 @@
 html, body {
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background-color: #0d0a08;
@@ -22,6 +23,7 @@ html, body {
   left: 0;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   z-index: 1;
   overflow: hidden;
 }
@@ -51,7 +53,7 @@ html, body {
   position: absolute;
   bottom: 0;
   left: 50%;
-  font-size: 13px;
+  font-size: 16.5px;
   font-weight: 700;
   color: #16100c;
   text-shadow: 0 1px 2px rgba(255, 230, 200, 0.4);
@@ -74,7 +76,7 @@ html, body {
   }
   100% {
     opacity: 0;
-    transform: translate(calc(-50% + var(--drift-x, 0px)), -14px) scale(1.05);
+    transform: translate(calc(-50% + var(--drift-x, 0px)), -20px) scale(1.05);
   }
 }
 
@@ -354,28 +356,42 @@ html, body {
 }
 
 /* Responsive adjustments */
-@media (max-width: 580px) {
+@media (max-aspect-ratio: 1/1), (max-width: 600px) {
+  .bg-image {
+    object-position: 52% 42%;
+  }
+
   .tree-trunk-player {
-    width: 94vw;
-    padding: 10px 14px;
-    gap: 12px;
-    top: 41%;
+    width: 93vw;
+    padding: 10px 12px;
+    gap: 10px;
+    top: 42%;
+    left: 50.5%;
+  }
+
+  .track-title {
+    font-size: 12.5px;
   }
 
   .track-artist {
-    max-width: 160px;
+    max-width: 140px;
+    font-size: 10.5px;
+  }
+
+  .track-publisher {
+    font-size: 9.5px;
   }
 
   .visitor-count-container {
-    top: 16px;
+    top: 14px;
     left: 16px;
-    font-size: 12px;
+    font-size: 11.5px;
   }
 
   .clock-container {
-    top: 16px;
+    top: 14px;
     right: 16px;
-    font-size: 13.3px;
+    font-size: 12.5px;
   }
 
   .radio-emitter-overlay {
