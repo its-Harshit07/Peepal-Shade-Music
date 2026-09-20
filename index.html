@@ -12,7 +12,10 @@
 <body>
   <!-- Fullscreen Background Image Wrapper -->
   <div class="bg-wrapper">
-    <img src="background.webp" alt="Background" class="bg-image" id="bg-img">
+    <picture class="bg-picture">
+      <source media="(max-aspect-ratio: 1/1), (max-width: 600px)" srcset="background_mobile.webp">
+      <img src="background.webp" alt="Background" class="bg-image" id="bg-img">
+    </picture>
     <!-- Radio Music Note Emitter Overlay -->
     <div class="radio-emitter-overlay" id="radio-emitter"></div>
   </div>
