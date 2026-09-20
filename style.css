@@ -355,17 +355,23 @@ html, body {
   display: none !important;
 }
 
-/* Responsive adjustments */
+/* Responsive adjustments for mobile portrait screens */
 @media (max-aspect-ratio: 1/1), (max-width: 600px) {
   .bg-image {
-    object-position: 52% 42%;
+    object-fit: contain;
+    object-position: center 38%;
+  }
+
+  .radio-emitter-overlay {
+    top: calc(38dvh + 56.25vw * 0.14);
+    left: 55.4%;
   }
 
   .tree-trunk-player {
-    width: 93vw;
+    width: 92vw;
     padding: 10px 12px;
     gap: 10px;
-    top: 42%;
+    top: 38dvh;
     left: 50.5%;
   }
 
@@ -392,11 +398,6 @@ html, body {
     top: 14px;
     right: 16px;
     font-size: 12.5px;
-  }
-
-  .radio-emitter-overlay {
-    top: 58.5%;
-    left: 55.4%;
   }
 }
 
