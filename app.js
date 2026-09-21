@@ -1,8 +1,6 @@
 import { songs } from './songs.js';
 
-// ==========================================
 // 1. LIVE DIGITAL CLOCK
-// ==========================================
 function updateClock() {
   const clockMainEl = document.getElementById('clock-main');
   const clockSecEl = document.getElementById('clock-sec');
@@ -21,9 +19,7 @@ function updateClock() {
 updateClock();
 setInterval(updateClock, 1000);
 
-// ==========================================
 // 2. REAL-TIME ACTIVE VISITOR COUNT (HTTP HEARTBEAT)
-// ==========================================
 function initVisitorCount() {
   const textEl = document.getElementById('visitor-count-text');
   if (!textEl) return;
@@ -62,15 +58,13 @@ function initVisitorCount() {
   window.addEventListener('beforeunload', () => {
     try {
       navigator.sendBeacon('/api/visitor', JSON.stringify({ visitorId, action: 'leave' }));
-    } catch (e) {}
+    } catch (e) { }
   });
 }
 
 initVisitorCount();
 
-// ==========================================
 // 3. RADIO MUSIC NOTE EMITTER ANIMATION
-// ==========================================
 let noteEmitterInterval = null;
 
 function emitSingleNote() {
@@ -114,9 +108,7 @@ function stopNoteAnimation() {
   }
 }
 
-// ==========================================
 // 4. YOUTUBE-BACKED MUSIC ARCHITECTURE
-// ==========================================
 let player = null;
 let playerReady = false;
 let currentIndex = 0;
@@ -148,7 +140,7 @@ function loadTrackMetadata(index) {
   if (trackNumEl) trackNumEl.textContent = `Track ${currentIndex + 1} / ${songs.length}`;
   if (trackTitleEl) trackTitleEl.textContent = song.title;
   if (trackArtistEl) trackArtistEl.textContent = `${song.artist} • ${song.album} (${song.year})`;
-  
+
   if (trackPublisherEl) {
     trackPublisherEl.textContent = `Source: ${song.publisher || 'Official'} ↗`;
     trackPublisherEl.href = song.channelUrl || song.youtubeUrl || `https://www.youtube.com/watch?v=${song.youtubeVideoId}`;
@@ -191,9 +183,7 @@ function loadTrack(index, autoPlay = true) {
 // Hydrate UI metadata immediately on script execution
 loadTrackMetadata(0);
 
-// ==========================================
 // 5. TRACK LIBRARY UI & SEARCH ARCHITECTURE
-// ==========================================
 let currentCategory = '90s';
 let currentSearchQuery = '';
 
@@ -472,7 +462,7 @@ function initYouTubePlayer() {
   });
 }
 
-window.onYouTubeIframeAPIReady = function() {
+window.onYouTubeIframeAPIReady = function () {
   initYouTubePlayer();
 };
 
@@ -515,7 +505,7 @@ function bindControls() {
     const width = rect.width;
     const pct = Math.max(0, Math.min(1, clickX / width));
     const targetDuration = player.getDuration() || 0;
-    
+
     if (targetDuration > 0) {
       player.seekTo(pct * targetDuration, true);
     }
