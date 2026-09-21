@@ -5,7 +5,8 @@
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   width: 100vw;
   height: 100vh;
   height: 100dvh;
@@ -74,12 +75,15 @@ html, body {
     opacity: 0;
     transform: translate(-50%, 0) scale(0.85);
   }
+
   20% {
     opacity: 0.85;
   }
+
   80% {
     opacity: 0.35;
   }
+
   100% {
     opacity: 0;
     transform: translate(calc(-50% + var(--drift-x, 0px)), -20px) scale(1.05);
@@ -133,8 +137,17 @@ html, body {
 }
 
 @keyframes pulse-dot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.85); }
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.5;
+    transform: scale(0.85);
+  }
 }
 
 /* Floating Live Clock (Top Right) */
@@ -362,7 +375,8 @@ html, body {
 }
 
 /* Responsive adjustments for mobile portrait screens */
-@media (max-aspect-ratio: 1/1), (max-width: 600px) {
+@media (max-aspect-ratio: 1/1),
+(max-width: 600px) {
   .tree-trunk-player {
     width: 93vw;
     padding: 10px 12px;
@@ -454,6 +468,7 @@ html, body {
     opacity: 0;
     transform: scale(0.96) translateY(8px);
   }
+
   100% {
     opacity: 1;
     transform: scale(1) translateY(0);
@@ -738,4 +753,3 @@ html, body {
   color: rgba(255, 255, 255, 0.45);
   font-size: 13px;
 }
-

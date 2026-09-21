@@ -512,8 +512,35 @@ function bindControls() {
   });
 }
 
+// Prevent PC & Mobile browser zoom scaling (Ctrl + Wheel, Ctrl + +/-/0, Pinch gestures)
+function initZoomPrevention() {
+  // Block Ctrl + Mouse Wheel zoom
+  window.addEventListener('wheel', (e) => {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  // Block Keyboard Zoom shortcuts (Ctrl/Cmd + '+', '-', '=', '0', Numpad +/-)
+  window.addEventListener('keydown', (e) => {
+    if (e.ctrlKey || e.metaKey) {
+      const zoomKeys = ['+', '-', '=', '0', 'NumpadAdd', 'NumpadSubtract'];
+      if (zoomKeys.includes(e.key) || zoomKeys.includes(e.code)) {
+        e.preventDefault();
+      }
+    }
+  });
+
+  // Block Pinch gesture zoom on supported touch browsers
+  document.addEventListener('gesturestart', (e) => e.preventDefault());
+  document.addEventListener('gesturechange', (e) => e.preventDefault());
+  document.addEventListener('gestureend', (e) => e.preventDefault());
+}
+
 // Bind UI controls on startup
 bindControls();
 initLibraryControls();
+initZoomPrevention();
+
 
 
